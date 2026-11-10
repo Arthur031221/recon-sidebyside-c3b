@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>舞步（第三次錄影）3D 並排（不刪減）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: one dark viewing room; six synced 3:4 panels (stack on phones), one transport bar under them. */
+  :root {
+    --bg: #0b0e12;
+    --surface: #121720;
+    --line: #242c38;
+    --fg: #e7eaef;
+    --muted: #8d97a6;
+    --accent: #f0b54a;
+    --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { font-family: var(--font-body); font-size: 15px; line-height: 1.6; }
+  .wrap {
+    max-width: 1440px; margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 20px 32px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+  h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.02em; text-wrap: balance; }
+  header p { margin: 0; color: var(--muted); max-width: 62ch; }
+  .stage { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .panel { margin: 0; position: relative; min-width: 0; }
+  .panel canvas {
+    display: block; width: 100%; max-width: 100%; aspect-ratio: 358 / 638; background: #000;
+    border: 1px solid var(--line); border-radius: 6px; touch-action: none; cursor: grab;
+  }
+  .panel canvas:active { cursor: grabbing; }
+  .panel canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .panel figcaption {
+    position: absolute; left: 8px; top: 8px; right: 8px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px;
+    pointer-events: none; text-shadow: 0 1px 3px #000, 0 0 8px #000;
+  }
+  .panel figcaption b { font-size: 15px; font-weight: 700; }
+  .panel figcaption span { font-size: 12px; color: var(--muted); }
+  .panel.ours figcaption b { color: var(--accent); }
+  .panel .stat {
+    position: absolute; left: 8px; bottom: 8px; font: 11px/1.4 var(--font-mono); color: var(--muted);
+    pointer-events: none; text-shadow: 0 1px 3px #000; font-variant-numeric: tabular-nums;
+  }
+  .panel .load {
+    position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 12px;
+    font: 13px/1.5 var(--font-mono); color: var(--muted); pointer-events: none;
+  }
+  .panel .gtbox {
+    width: 100%; aspect-ratio: 358 / 638; background: #000; border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+  }
+  .panel .gtbox img { display: block; width: 100%; height: 100%; object-fit: fill; transition: opacity 0.15s; }
+  .panel.gt figcaption b { color: var(--fg); }
+  .panel.gt.off .gtbox img { opacity: 0.12; }
+  .panel.gt .load { color: var(--fg); font-family: var(--font-body); font-size: 13px; text-shadow: 0 1px 3px #000; }
+  .bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 12px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  }
+  .bar .grow { flex: 1 1 260px; display: flex; align-items: center; gap: 10px; min-width: 0; }
+  input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--accent); }
+  button, select {
+    font: 500 14px/1 var(--font-body); color: var(--fg); background: transparent; border: 1px solid var(--line);
+    border-radius: 6px; padding: 8px 12px; cursor: pointer;
+  }
+  button:hover, select:hover { border-color: var(--muted); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  #play { min-width: 76px; }
+  .frame { font: 13px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .group label { font-size: 13px; color: var(--muted); }
+  .hint { margin: 0; font-size: 13px; color: var(--muted); }
+  .notes { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted); max-width: 90ch; display: grid; gap: 4px; }
+  .panel.ph canvas { opacity: 0.25; }
+  .panel.ph .load { font: 700 17px/1.5 var(--font-body); color: var(--fg); text-shadow: 0 1px 3px #000; }
+  .err { color: var(--accent); }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+  .score{margin:10px 0}.verdict{display:flex;gap:10px;align-items:flex-start;margin:6px 0}.verdict p{margin:2px 0}.verdict .chip{flex:none;font-weight:700;padding:2px 10px;border-radius:999px;color:#fff}.v-win .chip{background:#1a7f37}.v-tie .chip{background:#6e7781}.v-loss .chip{background:#cf222e}.v-abstain .chip{background:#9a6700}.verdict.sub{opacity:.92;font-size:.95em}.tbl{overflow-x:auto;margin:10px 0}.tbl table{border-collapse:collapse;font-size:13px}.tbl caption{text-align:left;font-weight:700;padding:4px 0}.tbl th,.tbl td{border:1px solid rgba(128,128,128,.45);padding:4px 6px;text-align:right;white-space:nowrap}.tbl th[scope=row]{text-align:left}td.c-win{background:rgba(26,127,55,.20)}td.c-loss{background:rgba(207,34,46,.20)}tr.ref td{opacity:.85}
+</style>
+
+<main class="wrap">
+  <header>
+    <h1>第三次錄影・舞步</h1>
+    <p>同一段影片、同一台虛擬相機、同一條時間軸：真實照片、MoSca、WorldTree、ReVisit（我們）四格並排。拖曳任何一格，所有格一起轉。真實照片只在固定機的位置才有。</p><p class="hint"><a href="https://arthur031221.github.io/recon-sidebyside/">← 全部片段（總表）</a>　<a href="../">這一批的目錄</a></p><p class="hint">這一批其他片段：<a href="../c3_C_06/">彎臂拍動</a>　<a href="../c3_C_07/">雙臂畫圈</a>　<a href="../c3_C_10/">轉臀</a>　<a href="../c3_C_11/">扭腰（單趟）</a></p>
+  </header>
+  <section class="score" aria-label="勝負"><div class="verdict v-tie"><span class="chip">我們：平手</span><p>動態區 PSNR：比 MoSca +0.59 [0.32, 0.89] dB（贏），比 WorldTree −0.11 [−0.42, 0.21] dB（平手）。要兩個對手的動態區都顯著贏、而且共視區沒有顯著輸才算贏；這段沒達到，也沒有顯著輸，判定平手。</p></div></section>
+
+  <section class="stage" id="stage" aria-label="真實照片與三種方法並排的 3D 檢視"></section>
+
+  <div class="bar" role="group" aria-label="播放與視角">
+    <button id="play" type="button" aria-pressed="false">▶ 播放</button>
+    <div class="grow">
+      <input id="time" type="range" min="0" max="355" step="1" value="0" aria-label="時間（幀）">
+      <span class="frame" id="frameLabel">第 0 / 355 幀</span>
+    </div>
+    <div class="group">
+      <label for="speed">速度</label>
+      <select id="speed">
+        <option value="3.75">0.5×</option>
+        <option value="7.5" selected>1×</option>
+        <option value="15">2×</option>
+      </select>
+    </div>
+    <div class="group" id="camBtns" aria-label="回到相機視角"></div>
+  </div>
+
+  <p class="hint">滑鼠左鍵拖曳：旋轉　右鍵或 Shift＋拖曳：平移　滾輪：縮放　雙擊：回到目前選的相機視角　手機：單指旋轉、雙指平移與縮放　鍵盤：空白鍵播放，←／→ 逐幀</p>
+  <section class="score-tables" aria-label="分數"><div class="tbl"><table><caption>各方法的分數（論文同一套評分）</caption><thead><tr><th scope="col">方法</th><th scope="col">動態區 PSNR ↑</th><th scope="col">動態區 SSIM ↑</th><th scope="col">動態區 LPIPS ↓</th><th scope="col">共視區 PSNR ↑</th><th scope="col">共視區 SSIM ↑</th><th scope="col">共視區 LPIPS ↓</th></tr></thead><tbody><tr><th scope="row">MoSca</th><td>14.36</td><td>0.937</td><td>0.308</td><td>19.52</td><td>0.678</td><td>0.269</td></tr><tr><th scope="row">WorldTree</th><td>15.06</td><td>0.940</td><td>0.297</td><td>20.09</td><td>0.698</td><td>0.261</td></tr><tr><th scope="row">ReVisit（我們）</th><td>14.95</td><td>0.938</td><td>0.216</td><td>20.03</td><td>0.694</td><td>0.189</td></tr></tbody></table></div><div class="tbl"><table><caption>配對差與 95% 信賴區間</caption><thead><tr><th scope="col">方法</th><th scope="col">動態區 PSNR ↑</th><th scope="col">動態區 SSIM ↑</th><th scope="col">動態區 LPIPS ↓</th><th scope="col">共視區 PSNR ↑</th><th scope="col">共視區 SSIM ↑</th><th scope="col">共視區 LPIPS ↓</th></tr></thead><tbody><tr><th scope="row">我們 − MoSca</th><td class="c-win">+0.59 [0.32, 0.89]<br><b>贏</b></td><td class="c-tie">+0.001 [−0.000, 0.003]<br><b>平手</b></td><td class="c-win">−0.092 [−0.103, −0.084]<br><b>贏</b></td><td class="c-win">+0.51 [0.33, 0.72]<br><b>贏</b></td><td class="c-win">+0.016 [0.012, 0.020]<br><b>贏</b></td><td class="c-win">−0.080 [−0.084, −0.076]<br><b>贏</b></td></tr><tr><th scope="row">我們 − WorldTree</th><td class="c-tie">−0.11 [−0.42, 0.21]<br><b>平手</b></td><td class="c-tie">−0.001 [−0.003, 0.000]<br><b>平手</b></td><td class="c-win">−0.081 [−0.091, −0.072]<br><b>贏</b></td><td class="c-tie">−0.05 [−0.24, 0.15]<br><b>平手</b></td><td class="c-tie">−0.004 [−0.008, 0.001]<br><b>平手</b></td><td class="c-win">−0.073 [−0.076, −0.070]<br><b>贏</b></td></tr></tbody></table></div><p class="hint">論文對第三次錄影的判定用種子 0，這頁的模型就是那一個。</p><details><summary>勝負怎麼判</summary><p>贏／平手／輸：逐幀配對差的 95% 信賴區間（移動區塊自助法，區塊長 10 幀、重抽 4000 次）整段落在好的一側＝贏，跨過 0＝平手，整段落在壞的一側＝輸；LPIPS 越低越好，所以 LPIPS 差值為負是贏。動態區＝會動的人；共視區＝訓練影片也看得到的像素。整段判定：對兩個對手的動態區 PSNR 都顯著贏、而且共視區 PSNR 沒有顯著輸＝贏；對任一對手的動態區或共視區 PSNR 顯著輸＝輸；其餘＝平手；週期檢查沒通過＝棄權（交出 MoSca 的結果）。</p></details></section>
+  <ul class="notes" id="notes">
+    <li>只供觀看：這一頁把存檔的重建結果在瀏覽器裡轉起來看。上面的分數是論文的評分（在固定機照片上逐幀算），不是從這一頁量的。</li>
+    <li>影片：每種方法都只用手持影片訓練；固定機沒拿來訓練，只當對照。全段 356 幀。轉開後真實照片那一格會變暗，因為那裡沒有 3D 真值。</li>
+    <li>相機：每一格都用同一個固定機位置，也就是論文評分用的位置；沒有替任何方法另外微調相機。</li>
+    <li>WorldTree：官方程式碼、樹高 2（四片葉子，時間窗 0–87、88–176、177–265、266–355，窗與窗之間直接切換、不混合）。每一幀畫靜態背景，加上葉子、父節點、根節點三組動態高斯。第 87→88、176→177、265→266 幀會換葉子，動態部分整組一起換，可能看到一次小跳動；這是官方組法本身的樣子。</li>
+    <li>不刪減：每種方法存檔裡的高斯全部放進這一頁，一顆都沒去掉；下面是每一格的數量。MoSca：靜態 342,038、動態 57,311。WorldTree：靜態 421,613、動態每片葉子 葉 2,000＋父 5,000＋根 29,606。ReVisit（我們）：靜態 505,447、動態 693,369。</li>
+    <li>畫的時候每一幀會略過不透明度低於 1/255 的高斯（和各方法自己的渲染器一樣，這些本來就看不見）；檔案裡的高斯全部都在。</li>
+    <li>畫質：這一頁是瀏覽器自己畫的（WebGL），只畫每顆高斯的基本色，不含隨視角變化的顏色，所以比各方法自己的渲染器略粗；論文的分數是用各方法自己的渲染器算的。</li>
+    <li>轉到很偏的角度會看到黑色區塊：那是訓練相機沒拍到的地方，不是網頁出錯。這一頁約 171 MB，第一次開要等一段時間；手機多半跑不動，請用電腦。</li>
+    <li id="refcheck">引擎核對：這一頁的網頁引擎在每個時刻算出的每顆動態高斯（位置、旋轉、不透明度），和各方法原始程式算的逐顆比對（MoSca與我們各 3 個時刻、WorldTree 的 12 個子模型各 1 個時刻）；靜態高斯直接取自存檔（數量與 md5 已核對）。位置：MoSca 與 WorldTree 最大差 4.1×10⁻⁷（場景座標單位）；我們每個時刻最多 2 顆（此刻可見的 100,118–101,234 顆動態高斯中）差超過 10⁻⁵，最大 2.0×10⁻³：這幾顆和第 4、第 5 近的控制節點幾乎等距（距離相差不到十萬分之一），兩邊的浮點捨入選了不同的第 4 個節點；其餘都在 10⁻⁵ 以內。旋轉最大差 1.8×10⁻⁷（1 − |四元數內積|）。不透明度：MoSca 與 WorldTree 最大差 2.0×10⁻³（存檔用 8 位元，正好半格＝0.5/255），我們 1.2×10⁻⁵。原始程式畫得出的高斯，引擎一顆都沒少畫；MoSca 與 WorldTree 在核對的時刻裡另外多畫了 22,109 顆不透明度介於 0.5/255 和 1/255、幾乎看不見的高斯（同樣是 8 位元捨入）。</li>
+    <li><details><summary>來源檔與 md5（核對用）</summary><div class="tbl"><table><thead><tr><th>格</th><th>角色</th><th>檔名</th><th>大小（bytes）</th><th>md5</th><th>高斯數</th></tr></thead><tbody><tr><td>MoSca</td><td>靜態</td><td>photometric_s_model_native_add3.pth</td><td>86,198,471</td><td>ea5c1e4928ad430e484cd831b3fa5d12</td><td>342,038</td></tr><tr><td>MoSca</td><td>動態</td><td>photometric_d_model_native_add3.pth</td><td>29,583,015</td><td>712149d193bcdb6c8c1ad1bd632c547a</td><td>57,311</td></tr><tr><td>WorldTree</td><td>靜態（葉子 1）</td><td>dst_L000_R087/photometric_s_model_native_add3.pth</td><td>107,938,372</td><td>239d59a0230e3c8937bbec8b4676dd5e</td><td>421,613</td></tr><tr><td>WorldTree</td><td>動態（葉子 1・葉節點）</td><td>dst_L000_R087/photometric_d_model_native_add3.pth</td><td>2,461,476</td><td>2d657c7acb7d4c860823bfb6a1c05518</td><td>2,000</td></tr><tr><td>WorldTree</td><td>動態（葉子 1・父節點）</td><td>dst_L000_R176/photometric_d_model_native_add3.pth</td><td>5,175,780</td><td>9c0c6226b1054aa9cc101709d48a2ba3</td><td>5,000</td></tr><tr><td>WorldTree</td><td>動態（葉子 1・根節點）</td><td>dst_L000_R355/photometric_d_model_native_add3.pth</td><td>17,098,916</td><td>949186ba948de4ed72fb725a1fff76bf</td><td>29,606</td></tr><tr><td>WorldTree</td><td>靜態（葉子 2）</td><td>dst_L088_R176/photometric_s_model_native_add3.pth</td><td>107,938,372</td><td>239d59a0230e3c8937bbec8b4676dd5e</td><td>421,613</td></tr><tr><td>WorldTree</td><td>動態（葉子 2・葉節點）</td><td>dst_L088_R176/photometric_d_model_native_add3.pth</td><td>2,480,292</td><td>0b524357fe97d35d5d7bc0404fd98aa7</td><td>2,000</td></tr><tr><td>WorldTree</td><td>動態（葉子 2・父節點）</td><td>dst_L000_R176/photometric_d_model_native_add3.pth</td><td>5,175,780</td><td>6741519a86b7c335b2866570c3d4a980</td><td>5,000</td></tr><tr><td>WorldTree</td><td>動態（葉子 2・根節點）</td><td>dst_L000_R355/photometric_d_model_native_add3.pth</td><td>17,098,916</td><td>1b89da2aea549f492d98be157b3c01be</td><td>29,606</td></tr><tr><td>WorldTree</td><td>靜態（葉子 3）</td><td>dst_L177_R265/photometric_s_model_native_add3.pth</td><td>107,938,372</td><td>239d59a0230e3c8937bbec8b4676dd5e</td><td>421,613</td></tr><tr><td>WorldTree</td><td>動態（葉子 3・葉節點）</td><td>dst_L177_R265/photometric_d_model_native_add3.pth</td><td>2,480,292</td><td>18dd758eac2c52b42d527f65a05cc292</td><td>2,000</td></tr><tr><td>WorldTree</td><td>動態（葉子 3・父節點）</td><td>dst_L177_R355/photometric_d_model_native_add3.pth</td><td>5,213,284</td><td>666ff9cd4ea025674187cbdad930d2b6</td><td>5,000</td></tr><tr><td>WorldTree</td><td>動態（葉子 3・根節點）</td><td>dst_L000_R355/photometric_d_model_native_add3.pth</td><td>17,098,916</td><td>1a82e7e6ed9d4926ee9ce17388294c46</td><td>29,606</td></tr><tr><td>WorldTree</td><td>靜態（葉子 4）</td><td>dst_L266_R355/photometric_s_model_native_add3.pth</td><td>107,938,372</td><td>239d59a0230e3c8937bbec8b4676dd5e</td><td>421,613</td></tr><tr><td>WorldTree</td><td>動態（葉子 4・葉節點）</td><td>dst_L266_R355/photometric_d_model_native_add3.pth</td><td>2,498,980</td><td>39e42b988109d858dc9d40605d3af484</td><td>2,000</td></tr><tr><td>WorldTree</td><td>動態（葉子 4・父節點）</td><td>dst_L177_R355/photometric_d_model_native_add3.pth</td><td>5,213,284</td><td>1174e10d50ff6f096ab56bad2909cd13</td><td>5,000</td></tr><tr><td>WorldTree</td><td>動態（葉子 4・根節點）</td><td>dst_L000_R355/photometric_d_model_native_add3.pth</td><td>17,098,916</td><td>5322697c261c06e694fa3342142c9271</td><td>29,606</td></tr><tr><td>ReVisit（我們）</td><td>存檔（靜態＋動態）</td><td>ckpt.pt</td><td>316,784,496</td><td>8526ce7e62a4427531ecbd104d672e32</td><td>靜態 505,447＋動態 693,369</td></tr></tbody></table></div></details></li>
+  </ul>
+</main>
+
+<script src="engine_wt.js"></script>
+<script>window.PW6 = {"parts": {"gt_1": 1, "mosca_s": 1, "mosca_d": 1, "wt_s": 1, "wt_L0_d0": 1, "wt_L0_d1": 1, "wt_L0_d2": 1, "wt_L1_d0": 1, "wt_L1_d1": 1, "wt_L1_d2": 1, "wt_L2_d0": 1, "wt_L2_d1": 1, "wt_L2_d2": 1, "wt_L3_d0": 1, "wt_L3_d1": 1, "wt_L3_d2": 1, "iii_s": 1, "iii_d": 1}, "loc": {}, "wt": {"leaves": [{"lo": 0, "hi": 87, "members": [{"left": 0}, {"left": 0}, {"left": 0}]}, {"lo": 88, "hi": 176, "members": [{"left": 88}, {"left": 0}, {"left": 0}]}, {"lo": 177, "hi": 265, "members": [{"left": 177}, {"left": 177}, {"left": 0}]}, {"lo": 266, "hi": 355, "members": [{"left": 266}, {"left": 177}, {"left": 0}]}]}};</script>
+<script>
+(function () {
+  'use strict';
+  var MAN = window.PW6 || { parts: {}, wt: null };
+  var PANELS = (window.V3D_PANELS || [
+  {"key": "mosca", "name": "MoSca", "sub": "對手方法・官方程式碼", "s": "mosca_s", "d": "mosca_d"},
+  {"key": "wt", "name": "WorldTree", "sub": "對手方法・官方程式碼・樹高 2", "wt": true},
+  {"key": "iii", "name": "ReVisit（我們）", "sub": "完整方法", "s": "iii_s", "d": "iii_d", "ours": true}
+]);
+  var INIT = window.V3D_INIT || {};
+  var DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+  var TW = 1024;
+
+  // ---------- small vector helpers
+  function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+  function add(a, b, s) { return [a[0] + b[0] * s, a[1] + b[1] * s, a[2] + b[2] * s]; }
+  function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+  function norm(a) { var n = Math.sqrt(dot(a, a)) || 1; return [a[0] / n, a[1] / n, a[2] / n]; }
+  function rot(v, k, ang) { // Rodrigues: rotate v about unit axis k
+    var c = Math.cos(ang), s = Math.sin(ang), kv = cross(k, v), kd = dot(k, v) * (1 - c);
+    return [v[0] * c + kv[0] * s + k[0] * kd, v[1] * c + kv[1] * s + k[1] * kd, v[2] * c + kv[2] * s + k[2] * kd];
+  }
+
+  // ---------- shared camera (OpenCV axes: x right, y down, z forward)
+  var CAMS = null, camKey = null, atTest = false;
+  var cam = { rx: [1, 0, 0], ry: [0, 1, 0], rz: [0, 0, 1], eye: [0, 0, 0], tgt: [0, 0, 1], K: null, up: [0, -1, 0] };
+  var center = null;
+  function w2cRows(w) { return w.length === 4 || w.length === 3 ? w : null; }
+  function setFromTest(key) {
+    var c = CAMS.test[key], w = w2cRows(c.w2c);
+    cam.rx = [w[0][0], w[0][1], w[0][2]]; cam.ry = [w[1][0], w[1][1], w[1][2]]; cam.rz = [w[2][0], w[2][1], w[2][2]];
+    var t = [w[0][3], w[1][3], w[2][3]];
+    cam.eye = [-(cam.rx[0] * t[0] + cam.ry[0] * t[1] + cam.rz[0] * t[2]),
+               -(cam.rx[1] * t[0] + cam.ry[1] * t[1] + cam.rz[1] * t[2]),
+               -(cam.rx[2] * t[0] + cam.ry[2] * t[1] + cam.rz[2] * t[2])];
+    var K = c.K;
+    cam.K = { fx: K[0][0], fy: K[1][1], cx: K[0][2], cy: K[1][2] };
+    var d = center ? dot([center[0] - cam.eye[0], center[1] - cam.eye[1], center[2] - cam.eye[2]], cam.rz) : 1;
+    if (!(d > 0.05)) d = 1;
+    cam.tgt = add(cam.eye, cam.rz, d);
+    camKey = key; atTest = true;
+    Array.prototype.forEach.call(document.querySelectorAll('#camBtns button'), function (b) {
+      b.setAttribute('aria-pressed', b.dataset.key === key ? 'true' : 'false');
+    });
+    viewChanged();
+  }
+  function viewMat() {
+    var e = cam.eye;
+    return [cam.rx[0], cam.rx[1], cam.rx[2], -dot(cam.rx, e),
+            cam.ry[0], cam.ry[1], cam.ry[2], -dot(cam.ry, e),
+            cam.rz[0], cam.rz[1], cam.rz[2], -dot(cam.rz, e), 0, 0, 0, 1];
+  }
+  function dist() { var v = [cam.eye[0] - cam.tgt[0], cam.eye[1] - cam.tgt[1], cam.eye[2] - cam.tgt[2]]; return Math.sqrt(dot(v, v)); }
+  function orbit(dx, dy, wpx) {
+    var k = 0.5 * Math.PI / Math.max(wpx, 200), yaw = -dx * k, pitch = -dy * k, up = cam.up;
+    var v = [cam.eye[0] - cam.tgt[0], cam.eye[1] - cam.tgt[1], cam.eye[2] - cam.tgt[2]];
+    v = rot(v, up, yaw); cam.rx = rot(cam.rx, up, yaw); cam.ry = rot(cam.ry, up, yaw); cam.rz = rot(cam.rz, up, yaw);
+    var rz2 = rot(cam.rz, cam.rx, pitch);
+    if (Math.abs(dot(rz2, up)) < 0.985) { v = rot(v, cam.rx, pitch); cam.ry = rot(cam.ry, cam.rx, pitch); cam.rz = rz2; }
+    cam.rz = norm(cam.rz); cam.rx = norm(cross(cam.ry, cam.rz)); cam.ry = cross(cam.rz, cam.rx);
+    cam.eye = [cam.tgt[0] + v[0], cam.tgt[1] + v[1], cam.tgt[2] + v[2]];
+    atTest = false; viewChanged();
+  }
+  function pan(dx, dy, wpx) {
+    var s = dist() / (cam.K.fx * wpx / CAMS.W);
+    var m = [-(dx * cam.rx[0] + dy * cam.ry[0]) * s, -(dx * cam.rx[1] + dy * cam.ry[1]) * s, -(dx * cam.rx[2] + dy * cam.ry[2]) * s];
+    cam.eye = add(cam.eye, m, 1); cam.tgt = add(cam.tgt, m, 1);
+    atTest = false; viewChanged();
+  }
+  function dolly(f) {
+    var d = Math.min(50, Math.max(0.02, dist() * f));
+    cam.eye = add(cam.tgt, cam.rz, -d);
+    atTest = false; viewChanged();
+  }
+
+  // ---------- WebGL
+  var VS = '#version 300 es\n' +
+    'precision highp float; precision highp int; precision highp usampler2D;\n' +
+    'uniform usampler2D u_tex; uniform mat4 u_view; uniform vec2 u_f, u_c, u_vp, u_lim;\n' +
+    'layout(location = 0) in uint a_idx;\n' +
+    'out vec4 v_col; out vec2 v_uv;\n' +
+    'void main() {\n' +
+    '  ivec2 tc = ivec2(int(a_idx & 1023u) * 2, int(a_idx >> 10));\n' +
+    '  uvec4 t0 = texelFetch(u_tex, tc, 0), t1 = texelFetch(u_tex, tc + ivec2(1, 0), 0);\n' +
+    '  vec4 cp = u_view * vec4(uintBitsToFloat(t0.xyz), 1.0);\n' +
+    '  float z = cp.z;\n' +
+    '  if (z < 0.02) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }\n' +
+    '  vec2 h0 = unpackHalf2x16(t1.x), h1 = unpackHalf2x16(t1.y), h2 = unpackHalf2x16(t1.z), h3 = unpackHalf2x16(t1.w);\n' +
+    '  vec3 s = exp(vec3(h0.x, h0.y, h1.x));\n' +
+    '  vec4 q = normalize(vec4(h1.y, h2.x, h2.y, h3.x));\n' +
+    '  float w = q.x, x = q.y, y = q.z, k = q.w;\n' +
+    '  mat3 R = mat3(1.0 - 2.0 * (y * y + k * k), 2.0 * (x * y + w * k), 2.0 * (x * k - w * y),\n' +
+    '                2.0 * (x * y - w * k), 1.0 - 2.0 * (x * x + k * k), 2.0 * (y * k + w * x),\n' +
+    '                2.0 * (x * k + w * y), 2.0 * (y * k - w * x), 1.0 - 2.0 * (x * x + y * y));\n' +
+    '  mat3 T = mat3(u_view) * mat3(R[0] * s.x, R[1] * s.y, R[2] * s.z);\n' +
+    '  mat3 Sc = T * transpose(T);\n' +
+    '  float tx = clamp(cp.x / z, -u_lim.x, u_lim.x) * z, ty = clamp(cp.y / z, -u_lim.y, u_lim.y) * z;\n' +
+    '  mat3 J = mat3(u_f.x / z, 0.0, 0.0, 0.0, u_f.y / z, 0.0, -u_f.x * tx / (z * z), -u_f.y * ty / (z * z), 0.0);\n' +
+    '  mat3 C = J * Sc * transpose(J);\n' +
+    '  float a = C[0][0] + 0.3, b = C[0][1], c = C[1][1] + 0.3;\n' +
+    '  float mid = 0.5 * (a + c), rad = sqrt(max(0.25 * (a - c) * (a - c) + b * b, 0.0));\n' +
+    '  float l1 = mid + rad, l2 = max(mid - rad, 0.01);\n' +
+    '  vec2 e1 = abs(b) > 1e-9 ? normalize(vec2(b, l1 - a)) : (a >= c ? vec2(1.0, 0.0) : vec2(0.0, 1.0));\n' +
+    '  vec2 e2 = vec2(-e1.y, e1.x);\n' +
+    '  float lim = 2.0 * max(u_vp.x, u_vp.y);\n' +
+    '  float r1 = min(3.0 * sqrt(l1), lim), r2 = min(3.0 * sqrt(l2), lim);\n' +
+    '  vec2 corner = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 2.0 - 1.0;\n' +
+    '  vec2 ctr = vec2(u_f.x * cp.x / z + u_c.x, u_f.y * cp.y / z + u_c.y);\n' +
+    '  vec2 pix = ctr + corner.x * r1 * e1 + corner.y * r2 * e2;\n' +
+    '  gl_Position = vec4(pix.x / u_vp.x * 2.0 - 1.0, 1.0 - pix.y / u_vp.y * 2.0, 0.0, 1.0);\n' +
+    '  v_uv = corner * vec2(r1 / sqrt(l1), r2 / sqrt(l2));\n' +
+    '  uint c32 = t0.w;\n' +
+    '  v_col = vec4(float(c32 & 255u), float((c32 >> 8) & 255u), float((c32 >> 16) & 255u), float(c32 >> 24)) / 255.0;\n' +
+    '}\n';
+  var FS = '#version 300 es\n' +
+    'precision highp float;\n' +
+    'in vec4 v_col; in vec2 v_uv; out vec4 o;\n' +
+    'void main() {\n' +
+    '  float r2 = dot(v_uv, v_uv);\n' +
+    '  if (r2 > 9.0) discard;\n' +
+    '  float al = min(0.99, v_col.a * exp(-0.5 * r2));\n' +
+    '  if (al < 1.0 / 255.0) discard;\n' +
+    '  o = vec4(v_col.rgb * al, al);\n' +
+    '}\n';
+
+  function makeGL(p) {
+    var gl = p.canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: true });
+    if (!gl) throw new Error('這個瀏覽器不支援 WebGL2，無法顯示 3D。');
+    function sh(type, src) {
+      var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+      return s;
+    }
+    var prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+    var u = {};
+    ['u_tex', 'u_view', 'u_f', 'u_c', 'u_vp', 'u_lim'].forEach(function (n) { u[n] = gl.getUniformLocation(prog, n); });
+    var vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+    var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.enableVertexAttribArray(0); gl.vertexAttribIPointer(0, 1, gl.UNSIGNED_INT, 0, 0); gl.vertexAttribDivisor(0, 1);
+    gl.bindVertexArray(null);
+    var tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+    p.gl = { gl: gl, prog: prog, u: u, vao: vao, buf: buf, tex: tex, count: 0 };
+  }
+  function uploadStatic(p, info, stat) {
+    var g = p.gl, gl = g.gl;
+    var maxT = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    if (info.rows > maxT || 2 * TW > maxT) throw new Error('顯示卡貼圖尺寸不夠（需要 ' + info.rows + ' 行）。');
+    gl.bindTexture(gl.TEXTURE_2D, g.tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32UI, 2 * TW, info.rows, 0, gl.RGBA_INTEGER, gl.UNSIGNED_INT, null);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 2 * TW, info.NsPad / TW, gl.RGBA_INTEGER, gl.UNSIGNED_INT, stat);
+  }
+  function uploadFrame(p, r) {
+    var g = p.gl, gl = g.gl;
+    if (r.stat) {
+      gl.bindTexture(gl.TEXTURE_2D, g.tex);
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 2 * TW, p.info.NsPad / TW, gl.RGBA_INTEGER, gl.UNSIGNED_INT, r.stat);
+    }
+    if (r.dyn && r.dyn.length) {
+      gl.bindTexture(gl.TEXTURE_2D, g.tex);
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, p.info.NsPad / TW, 2 * TW, r.dyn.length / (8 * TW), gl.RGBA_INTEGER, gl.UNSIGNED_INT, r.dyn);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, g.buf);
+    gl.bufferData(gl.ARRAY_BUFFER, r.order, gl.DYNAMIC_DRAW);
+    g.count = r.n;
+  }
+  function draw(p) {
+    var g = p.gl; if (!g) return;
+    var gl = g.gl, cw = p.canvas.width, ch = p.canvas.height;
+    gl.viewport(0, 0, cw, ch);
+    gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+    if (!g.count || !cam.K) return;
+    var sx = cw / CAMS.W, sy = ch / CAMS.H, V = viewMat(), cm = new Float32Array(16);
+    for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) cm[c * 4 + r] = V[r * 4 + c];
+    gl.useProgram(g.prog);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, g.tex); gl.uniform1i(g.u.u_tex, 0);
+    gl.uniformMatrix4fv(g.u.u_view, false, cm);
+    gl.uniform2f(g.u.u_f, cam.K.fx * sx, cam.K.fy * sy);
+    gl.uniform2f(g.u.u_c, cam.K.cx * sx, cam.K.cy * sy);
+    gl.uniform2f(g.u.u_vp, cw, ch);
+    gl.uniform2f(g.u.u_lim, 1.3 * 0.5 * CAMS.W / cam.K.fx, 1.3 * 0.5 * CAMS.H / cam.K.fy);
+    gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.bindVertexArray(g.vao);
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, g.count);
+    gl.bindVertexArray(null);
+  }
+
+  // ---------- panels, engines and requests
+  var stage = document.getElementById('stage');
+  var state = { j: INIT.j || 0, T: 356, playing: false, fps: 7.5, lastAdv: 0, dirty: true, reqId: 0 };
+  function placeholderOf(cfg) { return !!(cfg.ph && !MAN.parts[cfg.s + '']); }
+  var panels = PANELS.map(function (cfg, i) {
+    var fig = document.createElement('figure'); fig.className = 'panel' + (cfg.ours ? ' ours' : '') + (placeholderOf(cfg) ? ' ph' : '');
+    var cv = document.createElement('canvas'); cv.tabIndex = 0; cv.setAttribute('aria-label', cfg.name + ' 的 3D 檢視，拖曳旋轉');
+    var cap = document.createElement('figcaption');
+    var b = document.createElement('b'); b.textContent = cfg.name; var sp = document.createElement('span'); sp.textContent = cfg.sub;
+    cap.appendChild(b); cap.appendChild(sp);
+    var stat = document.createElement('div'); stat.className = 'stat';
+    var load = document.createElement('div'); load.className = 'load'; load.textContent = placeholderOf(cfg) ? ('「' + cfg.ph + '」') : '準備中…';
+    fig.appendChild(cv); fig.appendChild(cap); fig.appendChild(stat); fig.appendChild(load); stage.appendChild(fig);
+    return { i: i, cfg: cfg, canvas: cv, statEl: stat, loadEl: load, gl: null, info: null, ready: false,
+             busy: false, pending: false, lastJ: -1, send: null };
+  });
+
+  // ---------- real photos of the held-out test cameras (ground truth exists only at those poses)
+  var GTCFG = window.V3D_GT || { '1': 'gt_1' };
+  var gt = (function () {
+    var fig = document.createElement('figure'); fig.className = 'panel gt off';
+    var box = document.createElement('div'); box.className = 'gtbox';
+    var img = document.createElement('img'); img.alt = '固定機實拍照片'; img.style.visibility = 'hidden';
+    box.appendChild(img);
+    var cap = document.createElement('figcaption');
+    var b = document.createElement('b'); b.textContent = '真實照片'; var sp = document.createElement('span'); sp.textContent = '固定機實拍（沒拿來訓練）';
+    cap.appendChild(b); cap.appendChild(sp);
+    var stat = document.createElement('div'); stat.className = 'stat';
+    var msg = document.createElement('div'); msg.className = 'load'; msg.textContent = '準備中…';
+    fig.appendChild(box); fig.appendChild(cap); fig.appendChild(stat); fig.appendChild(msg); stage.insertBefore(fig, stage.firstChild);
+    box.addEventListener('dblclick', function () { if (camKey) setFromTest(camKey); });
+    return { fig: fig, img: img, stat: stat, msg: msg, data: {}, url: null, shown: '' };
+  })();
+  function gtLoad(k) {
+    if (!gt.data[k]) gt.data[k] = fetchParts(GTCFG[k], function () {}).then(function (buf) {
+      var hl = new DataView(buf).getUint32(0, true);
+      var meta = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl)));
+      var idx = {}; meta.tid.forEach(function (t, i) { idx[t] = i; });
+      return { meta: meta, idx: idx, bytes: new Uint8Array(buf, 4 + hl) };
+    });
+    return gt.data[k];
+  }
+  function gtSay(text, err) {
+    gt.fig.classList.add('off'); gt.msg.hidden = false; gt.msg.textContent = text;
+    gt.msg.classList.toggle('err', !!err); gt.stat.textContent = '';
+  }
+  function gtUpdate() {
+    var k = camKey, j = state.j;
+    if (!atTest || !k) { gtSay('這個角度沒有真實照片：這段只有一台固定機拍的照片，沒有 3D 真值。按「固定機視角」或雙擊任一格，回到固定機的位置就會出現。'); return; }
+    if (!GTCFG[k]) { gtSay('固定機沒有照片'); return; }
+    if (!gt.shown) gtSay('載入真實照片…');
+    gtLoad(k).then(function (g) {
+      if (camKey !== k || state.j !== j || !atTest) return;
+      var i = g.idx[j];
+      if (i === undefined) { gtSay('固定機在第 ' + j + ' 幀沒有對應的照片（這段有照片的幀共 ' + g.meta.tid.length + ' 幀）'); return; }
+      var want = k + ':' + j;
+      if (gt.shown !== want) {
+        var o = g.meta.off[i], u = URL.createObjectURL(new Blob([g.bytes.subarray(o, o + g.meta.len[i])], { type: 'image/jpeg' }));
+        var old = gt.url; gt.url = u; gt.img.src = u; gt.img.style.visibility = ''; gt.shown = want;
+        if (old) setTimeout(function () { URL.revokeObjectURL(old); }, 1000);
+      }
+      gt.fig.classList.remove('off'); gt.msg.hidden = true;
+      gt.stat.textContent = '固定機・第 ' + j + ' 幀實拍';
+    }, function (e) { gtSay('真實照片載入失敗：' + ((e && e.message) || e), true); });
+  }
+
+  function tans() { return [0.5 * CAMS.W / cam.K.fx, 0.5 * CAMS.H / cam.K.fy]; }
+  function request(p) {
+    if (!p.ready || !cam.K) return;
+    if (p.busy) { p.pending = true; return; }
+    p.busy = true; p.pending = false;
+    var t = tans();
+    p.send({ type: 'update', j: state.j, view: viewMat(), tanx: t[0], tany: t[1], id: ++state.reqId });
+  }
+  function requestAll() { panels.forEach(request); }
+  function viewChanged() { state.dirty = true; requestAll(); gtUpdate(); }
+  function onFrame(p, r) {
+    try { uploadFrame(p, r); } catch (e) { fail(p, e); return; }
+    p.lastJ = r.j; p.busy = false;
+    p.statEl.textContent = '繪製 ' + (r.n / 1e4).toFixed(1) + ' 萬顆（動態 ' + (r.V / 1e4).toFixed(2) + ' 萬）';
+    state.dirty = true;
+    if (p.pending) request(p);
+  }
+  function fail(p, e) {
+    p.loadEl.hidden = false; p.loadEl.classList.add('err');
+    p.loadEl.textContent = '這一格無法顯示：' + ((e && e.message) || e);
+    if (window.console) console.error(e);
+  }
+  function onLoaded(p, info, stat) {
+    p.info = info;
+    try { makeGL(p); uploadStatic(p, info, stat); } catch (e) { fail(p, e); return; }
+    p.ready = true; p.loadEl.hidden = true;
+    state.T = Math.min.apply(null, panels.filter(function (q) { return q.info; }).map(function (q) { return q.info.T; }));
+    timeEl.max = String(state.T - 1); setFrameLabel();
+    if (!center && info.center) { center = info.center; if (camKey) setFromTest(camKey); }
+    request(p);
+  }
+
+  // GitHub Pages version: model files ship as raw .bin parts (40,000,000 bytes); the base64 path below stays for .txt only.
+  var B64 = (function () {
+    var t = new Uint8Array(256).fill(255), a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    for (var i = 0; i < 64; i++) t[a.charCodeAt(i)] = i;
+    return t;
+  })();
+  function unb64(buf) {
+    var src = new Uint8Array(buf), n = src.length;
+    while (n > 0 && (src[n - 1] === 61 || src[n - 1] <= 32)) n--;
+    var out = new Uint8Array((n * 3) >> 2), o = 0, acc = 0, bits = 0;
+    for (var i = 0; i < n; i++) {
+      var v = B64[src[i]];
+      if (v === 255) continue;
+      acc = ((acc << 6) | v) & 0xffffff; bits += 6;
+      if (bits >= 8) { bits -= 8; out[o++] = (acc >> bits) & 255; }
+    }
+    return o === out.length ? out.buffer : out.buffer.slice(0, o);
+  }
+  function fetchBuf(url, onProg) {
+    var fin = /\.txt$/.test(url) ? unb64 : function (b) { return b; };
+    return fetch(url).then(function (res) {
+      if (!res.ok) throw new Error('讀不到 ' + url + '（' + res.status + '）');
+      var total = res.headers.get('content-encoding') ? 0 : (+res.headers.get('content-length') || 0);
+      if (!res.body || !res.body.getReader) return res.arrayBuffer().then(fin);
+      var reader = res.body.getReader(), chunks = [], got = 0;
+      function pump() {
+        return reader.read().then(function (x) {
+          if (x.done) {
+            var out = new Uint8Array(got), o = 0;
+            chunks.forEach(function (c) { out.set(c, o); o += c.length; });
+            return fin(out.buffer);
+          }
+          chunks.push(x.value); got += x.value.length; onProg(got, total);
+          return pump();
+        });
+      }
+      return pump();
+    });
+  }
+
+  // a model file is stored as data/<base>.<i>.bin parts (40,000,000 raw bytes each; MAN.loc points shared files elsewhere); fetch all parts and join
+  function fetchParts(base, onProg) {
+    var n = MAN.parts[base];
+    if (!n) return Promise.reject(new Error('沒有這個檔案：' + base));
+    var got = new Array(n).fill(0), tot = new Array(n).fill(0), ps = [];
+    function rep() { onProg(got.reduce(function (a, b) { return a + b; }, 0), tot.reduce(function (a, b) { return a + b; }, 0)); }
+    for (var i = 0; i < n; i++) (function (i) {
+      ps.push(fetchBuf(((MAN.loc && MAN.loc[base]) || 'data/') + base + '.' + i + '.bin', function (g, t) { got[i] = g; tot[i] = t; rep(); }));
+    })(i);
+    return Promise.all(ps).then(function (bufs) {
+      var len = 0; bufs.forEach(function (b) { len += b.byteLength; });
+      var out = new Uint8Array(len), o = 0;
+      bufs.forEach(function (b) { out.set(new Uint8Array(b), o); o += b.byteLength; });
+      return out.buffer;
+    });
+  }
+
+  function startEngine(p, sBuf, dBuf) {
+    var worker = null, settled = false;
+    function useMain() {
+      if (settled) return; settled = true;
+      if (worker) { try { worker.terminate(); } catch (e) {} }
+      var model;
+      try { model = p.cfg.wt ? new V3D.WTModel(sBuf, dBuf, MAN.wt) : new V3D.Model(sBuf, dBuf); } catch (e) { fail(p, e); return; }
+      var stat = p.cfg.wt ? model.leafStat[0].slice() : model.stat; model.stat = null;
+      p.send = function (req) {
+        setTimeout(function () {
+          try { onFrame(p, model.update(req.j, req.view, req.tanx, req.tany)); } catch (e) { fail(p, e); }
+        }, 0);
+      };
+      onLoaded(p, model.info(), stat);
+    }
+    try { worker = new Worker('engine_wt.js'); } catch (e) { worker = null; }
+    if (!worker || !window.V3D) { if (window.V3D) useMain(); else fail(p, new Error('運算程式沒有載入')); return; }
+    var timer = setTimeout(useMain, 6000);
+    worker.onerror = function () { clearTimeout(timer); useMain(); };
+    worker.onmessage = function (ev) {
+      var d = ev.data;
+      if (d.type === 'ready') {
+        clearTimeout(timer); settled = true;
+        p.send = function (req) { worker.postMessage(req); };
+        if (p.cfg.wt) worker.postMessage({ type: 'load', s: sBuf, d: dBuf, wt: MAN.wt }, sBuf.concat.apply(sBuf, dBuf));
+        else worker.postMessage({ type: 'load', s: sBuf, d: dBuf }, [sBuf, dBuf]);
+      } else if (d.type === 'loaded') onLoaded(p, d.info, d.stat);
+      else if (d.type === 'frame') onFrame(p, d);
+      else if (d.type === 'error') fail(p, new Error(d.msg.split('\n')[0]));
+    };
+  }
+
+  function loadPanel(p) {
+    if (placeholderOf(p.cfg)) return;   // (t): files not shipped yet; the column keeps its placeholder text
+    var files = p.cfg.wt ? ['wt_s']
+        .concat([0, 1, 2, 3].reduce(function (a, k) { return a.concat([0, 1, 2].map(function (j) { return 'wt_L' + k + '_d' + j; })); }, []))
+      : [p.cfg.s, p.cfg.d];
+    var prog = files.map(function () { return 0; }), tot = files.map(function () { return 0; });
+    function show() {
+      var g = prog.reduce(function (a, b) { return a + b; }, 0) / 1e6, t = tot.reduce(function (a, b) { return a + b; }, 0) / 1e6;
+      p.loadEl.textContent = '載入模型 ' + g.toFixed(1) + (t ? ' / ' + t.toFixed(1) : '') + ' MB';
+    }
+    return Promise.all(files.map(function (f, i) {
+      return fetchParts(f, function (g, t) { prog[i] = g; tot[i] = t; show(); });
+    })).then(function (bufs) {
+      p.loadEl.textContent = '建立 3D 資料…';
+      if (p.cfg.wt) startEngine(p, [bufs[0], bufs[0].slice(0), bufs[0].slice(0), bufs[0].slice(0)], [0, 1, 2, 3].map(function (k) { return bufs.slice(1 + 3 * k, 4 + 3 * k); }));
+      else startEngine(p, bufs[0], bufs[1]);
+    }).catch(function (e) { fail(p, e); });
+  }
+
+  // ---------- canvas sizing
+  function resize() {
+    panels.forEach(function (p) {
+      var w = Math.max(1, Math.round(p.canvas.clientWidth * DPR)), h = Math.max(1, Math.round(p.canvas.clientHeight * DPR));
+      if (p.canvas.width !== w || p.canvas.height !== h) { p.canvas.width = w; p.canvas.height = h; state.dirty = true; }
+    });
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener('resize', resize);
+
+  // ---------- pointer input (any panel drives the shared camera)
+  panels.forEach(function (p) {
+    var cv = p.canvas, pts = new Map(), mode = null, last = null, pinch = null;
+    cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    cv.addEventListener('pointerdown', function (e) {
+      cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+      if (pts.size === 1) { mode = (e.button === 2 || e.shiftKey) ? 'pan' : 'orbit'; last = [e.clientX, e.clientY]; }
+      if (pts.size === 2) { mode = 'pinch'; pinch = pinchInfo(); }
+    });
+    function pinchInfo() {
+      var a = Array.from(pts.values()), dx = a[0][0] - a[1][0], dy = a[0][1] - a[1][1];
+      return { d: Math.sqrt(dx * dx + dy * dy) || 1, m: [(a[0][0] + a[1][0]) / 2, (a[0][1] + a[1][1]) / 2] };
+    }
+    cv.addEventListener('pointermove', function (e) {
+      if (!pts.has(e.pointerId) || !cam.K) return;
+      pts.set(e.pointerId, [e.clientX, e.clientY]);
+      var wpx = cv.clientWidth;
+      if (mode === 'pinch' && pts.size >= 2) {
+        var q = pinchInfo();
+        dolly(pinch.d / q.d); pan(q.m[0] - pinch.m[0], q.m[1] - pinch.m[1], wpx); pinch = q;
+      } else if (mode && last) {
+        var dx = e.clientX - last[0], dy = e.clientY - last[1]; last = [e.clientX, e.clientY];
+        if (mode === 'pan') pan(dx, dy, wpx); else orbit(dx, dy, wpx);
+      }
+    });
+    function up(e) {
+      pts.delete(e.pointerId);
+      if (pts.size === 1) { mode = 'orbit'; last = Array.from(pts.values())[0]; } else if (!pts.size) { mode = null; last = null; }
+    }
+    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    cv.addEventListener('wheel', function (e) {
+      if (!cam.K) return; e.preventDefault();
+      var dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      dolly(Math.exp(dy * 0.0015));
+    }, { passive: false });
+    cv.addEventListener('dblclick', function () { if (camKey) setFromTest(camKey); });
+  });
+
+  // ---------- transport
+  var playBtn = document.getElementById('play'), timeEl = document.getElementById('time'),
+    frameLabel = document.getElementById('frameLabel'), speedEl = document.getElementById('speed');
+  function setFrameLabel() { frameLabel.textContent = '第 ' + state.j + ' / ' + (state.T - 1) + ' 幀'; timeEl.value = String(state.j); }
+  function setPlaying(on) {
+    state.playing = on; playBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    playBtn.textContent = on ? '❚❚ 暫停' : '▶ 播放';
+  }
+  function gotoFrame(j) { state.j = ((j % state.T) + state.T) % state.T; setFrameLabel(); requestAll(); gtUpdate(); }
+  playBtn.addEventListener('click', function () { setPlaying(!state.playing); });
+  timeEl.addEventListener('input', function () { setPlaying(false); gotoFrame(+timeEl.value); });
+  speedEl.addEventListener('change', function () { state.fps = +speedEl.value; });
+  window.addEventListener('keydown', function (e) {
+    var tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON') return;
+    if (e.key === ' ') { e.preventDefault(); setPlaying(!state.playing); }
+    else if (e.key === 'ArrowRight') { setPlaying(false); gotoFrame(state.j + 1); }
+    else if (e.key === 'ArrowLeft') { setPlaying(false); gotoFrame(state.j - 1); }
+  });
+
+  function loop(now) {
+    if (state.playing) {
+      var live = panels.filter(function (p) { return p.ready; });
+      var caught = live.length && live.every(function (p) { return !p.busy && p.lastJ === state.j; });
+      if (caught && now - state.lastAdv >= 1000 / state.fps) { state.lastAdv = now; gotoFrame(state.j + 1); }
+    }
+    state.lastTick = now;
+    if (state.dirty) { state.dirty = false; panels.forEach(draw); }
+    requestAnimationFrame(loop);
+  }
+  // drawing normally happens on animation frames; when the browser pauses them (hidden or headless views), draw on arrival
+  setInterval(function () {
+    if (performance.now() - (state.lastTick || 0) > 500 && state.dirty) { state.dirty = false; panels.forEach(draw); }
+  }, 250);
+  window.__v3d = { panels: panels, cam: cam, state: state, draw: function () { panels.forEach(draw); },
+    orbit: orbit, pan: pan, dolly: dolly, setCam: function (k) { setFromTest(k); }, frame: function (j) { gotoFrame(j); }, gt: gt };
+
+  // ---------- boot
+  fetch('cams.json').then(function (r) { if (!r.ok) throw new Error('讀不到相機資料'); return r.json(); }).then(function (c) {
+    CAMS = c; cam.up = norm(c.up);
+    var keys = Object.keys(c.test).sort(), box = document.getElementById('camBtns');
+    keys.forEach(function (k) {
+      var b = document.createElement('button'); b.type = 'button'; b.dataset.key = k; b.textContent = '固定機視角';
+      b.addEventListener('click', function () { setFromTest(k); }); box.appendChild(b);
+    });
+    resize();
+    setFromTest(INIT.cam && c.test[INIT.cam] ? INIT.cam : keys[0]);
+    setFrameLabel();
+    panels.forEach(loadPanel);
+    requestAnimationFrame(loop);
+  }).catch(function (e) { panels.forEach(function (p) { fail(p, e); }); });
+})();
+</script>
+
+</html>
